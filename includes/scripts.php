@@ -21,18 +21,10 @@ function sfwp_admin_scripts( $hook ) {
     // Use minified libraries if SCRIPT_DEBUG is turned off
     $suffix = ( ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) || ( defined( 'SFWP_DEBUG' ) && SFWP_DEBUG ) ) ? '' : '.min';
 
-    /**
-     *	Settings page only
-     */
-    $screen = get_current_screen();
+    wp_enqueue_script( 'sfwp_admin', SFWP_URL . 'public/assets/js/admin' . $suffix . '.js', array( 'jquery' ), SFWP_VER );
+    wp_enqueue_style( 'sfwp_admin', SFWP_URL . 'public/assets/css/admin' . $suffix . '.css', false, SFWP_VER );
 
-    if ( ! empty( $screen->base ) && ( $screen->base == 'settings_page_wp-sendy' || $screen->base == 'widgets' ) ) {
-
-        wp_enqueue_script( 'sfwp_admin_js', SFWP_URL . 'public/assets/js/admin' . $suffix . '.js', array( 'jquery' ), SFWP_VER );
-        wp_enqueue_style( 'sfwp_admin_css', SFWP_URL . 'public/assets/css/admin' . $suffix . '.css', false, SFWP_VER );
-
-        do_action( 'sfwp_admin_enqueue_scripts' );
-    }
+    do_action( 'sfwp_admin_enqueue_scripts' );
 }
 add_action( 'admin_enqueue_scripts', 'sfwp_admin_scripts', 100 );
 
@@ -59,7 +51,7 @@ function sfwp_load_scripts() {
     $suffix = ( ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) || ( defined( 'SFWP_DEBUG' ) && SFWP_DEBUG ) ) ? '' : '.min';
 
     //wp_enqueue_script( 'sfwp_scripts', SFWP_URL . 'public/assets/js/scripts' . $suffix . '.js', array( 'jquery' ), SFWP_VER, true );
-    wp_enqueue_style( 'sfwp_styles', SFWP_URL . 'public/assets/css/styles' . $suffix . '.css', false, SFWP_VER );
+    wp_enqueue_style( 'sfwp', SFWP_URL . 'public/assets/css/styles' . $suffix . '.css', false, SFWP_VER );
 
     do_action( 'sfwp_enqueue_scripts' );
 }

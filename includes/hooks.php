@@ -14,7 +14,7 @@ if( !defined( 'ABSPATH' ) ) exit;
  */
 function sfwp_add_body_classes( $classes ) {
 
-    $classes[] = 'ufwp';
+    $classes[] = 'wp-sendy';
 
     return $classes;
 }

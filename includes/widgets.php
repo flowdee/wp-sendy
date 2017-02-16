@@ -32,7 +32,7 @@ function sfwp_widget_do_shortcode( $atts = array() ) {
     if ( sizeof( $atts ) > 0 ) {
 
         // Build Shortcode
-        $shortcode = '[ufwp';
+        $shortcode = '[sfwp';
 
         foreach ( $atts as $key => $value ) {
             $shortcode .= ' ' . $key . '="' . $value . '"';
@@ -64,11 +64,11 @@ function sfwp_widget_text( $widget_text, $instance, $widget ) {
 
     static $text_widget_scripts_loaded = false;
 
-    if ( has_shortcode( $instance['text'], 'ufwp' ) || has_shortcode( $instance['text'], 'udemy' ) ) {
+    if ( has_shortcode( $instance['text'], 'wp-sendy' ) || has_shortcode( $instance['text'], 'udemy' ) ) {
 
         // Add widget template if missing
         if ( strpos( $instance['text'], 'template') === false ) {
-            $widget_text = str_replace( '[ufwp', '[ufwp template="widget"', $widget_text );
+            $widget_text = str_replace( '[sfwp', '[sfwp template="widget"', $widget_text );
 
         // Reset invalid templates
         } elseif ( strpos( $instance['text'], 'template="standard"') !== false ) {

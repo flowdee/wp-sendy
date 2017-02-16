@@ -31,18 +31,19 @@ if (!class_exists('SFWP_Settings')) {
             $this->curl = $this->check_curl();
 
             // Initialize
-            add_action('admin_menu', array( &$this, 'add_admin_menu') );
+            add_action('sfwp_admin_menu', array( &$this, 'add_admin_menu'), 10 );
             add_action('admin_init', array( &$this, 'init_settings') );
         }
 
-        function add_admin_menu()
+        function add_admin_menu( $parent_menu_slug )
         {
 
-            add_options_page(
-                __('Sendy', 'wp-sendy'),
-                __('Sendy', 'wp-sendy'),
-                'manage_options',
-                'wp-sendy',
+            add_submenu_page(
+                $parent_menu_slug,
+                __( 'Settings', 'collpress' ),
+                __( 'Settings', 'collpress' ),
+                'edit_pages',
+                $parent_menu_slug,
                 array( &$this, 'options_page' )
             );
 
@@ -69,38 +70,49 @@ if (!class_exists('SFWP_Settings')) {
              */
             do_action( 'sfwp_settings_register' );
 
-            // SECTION: General
+            // SECTION: API
             add_settings_section(
-                'sfwp_settings_general',
-                __('General Settings', 'wp-sendy'),
+                'sfwp_settings_api',
+                __('Sendy API Settings', 'wp-sendy'),
                 false,
                 'sfwp_settings'
             );
 
             add_settings_field(
-                'sfwp_api_client',
-                __('API', 'wp-sendy'),
-                array(&$this, 'api_client_render'),
+                'sfwp_api_status',
+                __('Status', 'wp-sendy'),
+                array(&$this, 'api_status_render'),
                 'sfwp_settings',
-                'sfwp_settings_general'
+                'sfwp_settings_api'
             );
 
             add_settings_field(
-                'sfwp_cache_duration',
-                __('Cache Duration', 'wp-sendy'),
-                array(&$this, 'cache_duration_render'),
+                'sfwp_api_url',
+                __('Sendy URL', 'wp-sendy'),
+                array(&$this, 'api_url_render'),
                 'sfwp_settings',
-                'sfwp_settings_general'
+                'sfwp_settings_api',
+                array('label_for' => 'sfwp_api_url')
+            );
+
+            add_settings_field(
+                'sfwp_api_key',
+                __('API Key', 'wp-sendy'),
+                array(&$this, 'api_key_render'),
+                'sfwp_settings',
+                'sfwp_settings_api',
+                array('label_for' => 'sfwp_api_key')
             );
 
             /*
              * Action to add more settings within this section
              */
-            do_action( 'sfwp_settings_general_register' );
+            do_action( 'sfwp_settings_api_register' );
 
+            /*
             // SECTION: Output
             add_settings_section(
-                'sfwp_settings_output',
+                'sfwp_settings_general',
                 __('Output Settings', 'wp-sendy'),
                 false,
                 'sfwp_settings'
@@ -131,12 +143,14 @@ if (!class_exists('SFWP_Settings')) {
                 'sfwp_settings_output',
                 array('label_for' => 'sfwp_custom_css')
             );
+            */
 
             /*
              * Action to add more settings within this section
              */
             do_action( 'sfwp_settings_output_register' );
 
+            /*
             // SECTION: Debug
             add_settings_section(
                 'sfwp_settings_other',
@@ -182,6 +196,7 @@ if (!class_exists('SFWP_Settings')) {
                     'sfwp_settings_other'
                 );
             }
+            */
 
             /*
              * Action to add more settings within this section
@@ -193,40 +208,30 @@ if (!class_exists('SFWP_Settings')) {
 
             //sfwp_debug($input);
 
-            $validation = ( isset ( $this->options['api_status'] ) ) ? $this->options['api_status'] : false;
+            $status = ( isset ( $this->options['api_status'] ) ) ? $this->options['api_status'] : false;
             $error = ( isset ( $this->options['api_error'] ) ) ? $this->options['api_error'] : '';
 
-            if ( ! empty ( $input['api_client_id'] ) && ! empty ( $input['api_client_password'] ) ) {
+            $input['api_url'] = untrailingslashit( $input['api_url'] );
 
-                $api_client_id = ( isset ( $this->options['api_client_id'] ) ) ? $this->options['api_client_id'] : '';
-                $api_client_id_new = $input['api_client_id'];
+            if ( ! empty ( $input['api_url'] ) && ! empty ( $input['api_key'] ) ) {
 
-                $api_client_password = ( isset ( $this->options['api_client_password'] ) ) ? $this->options['api_client_password'] : '';
-                $api_client_password_new = $input['api_client_password'];
+                $api_url = ( isset ( $this->options['api_url'] ) ) ? $this->options['api_url'] : '';
+                $api_url_new = $input['api_url'];
 
-                if ( $api_client_id_new != $api_client_id || $api_client_password_new != $api_client_password ) {
+                $api_key = ( isset ( $this->options['api_key'] ) ) ? $this->options['api_key'] : '';
+                $api_key_new = $input['api_key'];
 
-                    $result = sfwp_validate_api_credentials( $api_client_id_new, $api_client_password_new );
+                if ( $api_url != $api_url_new || $api_key != $api_key_new ) {
 
-                    $validation = ( ! empty ( $result['status'] ) ) ? true : false;
-                    $error = ( ! empty ( $result['error'] ) ) ? $result['error'] : '';
+                    $validation = sfwp_validate_api_credentials( $api_url_new, $api_key_new );
+
+                    $status = ( ! empty ( $validation['status'] ) ) ? true : false;
+                    $error = ( ! empty ( $validation['error'] ) ) ? $validation['error'] : '';
                 }
             }
 
-            $input['api_status'] = $validation;
+            $input['api_status'] = $status;
             $input['api_error'] = $error;
-
-            // Handle cache deletion
-            if ( isset ( $input['delete_cache'] ) && $input['delete_cache'] === '1' ) {
-                sfwp_delete_cache();
-                $input['delete_cache'] = '0';
-            }
-
-            // Handle cache deletion
-            if ( isset ( $input['reset_log'] ) && $input['reset_log'] === '1' ) {
-                delete_option('sfwp_log');
-                $input['reset_log'] = '0';
-            }
 
             $input = apply_filters( 'sfwp_settings_validate_input', $input );
 
@@ -245,14 +250,14 @@ if (!class_exists('SFWP_Settings')) {
                         <?php _e( 'In order to get the course ID, simply add the course to the cart and take the ID out of the url of your browser.', 'wp-sendy' ); ?>
                     </p>
                     <p>
-                        <code>[ufwp id="480986"]</code>
+                        <code>[sfwp id="480986"]</code>
                     </p>
 
                     <p>
                         <strong><?php _e( 'Search for courses', 'wp-sendy' ); ?></strong><br />
                         <?php _e('Alternatively you can search for courses and display grids or lists of multiple courses.', 'wp-sendy'); ?> <span style="color: darkorange; font-weight: bold;"><?php _e( 'This feature requires API keys!', 'wp-sendy' ); ?></span>
                     <p>
-                        <code>[ufwp search="css" items="6" template="grid" grid="3"]</code> <?php _e( 'or', 'wp-sendy' ); ?> <code>[ufwp search="html" items="6" template="list"]</code>
+                        <code>[sfwp search="css" items="6" template="grid" grid="3"]</code> <?php _e( 'or', 'wp-sendy' ); ?> <code>[sfwp search="html" items="6" template="list"]</code>
                     </p>
 
                     <p><?php printf( wp_kses( __( 'Please take a look into the <a href="%s">documentation</a> for more options.', 'wp-sendy' ), array(  'a' => array( 'href' => array() ) ) ), esc_url( 'https://coder.flowdee.de/docs/article/wp-sendy/' ) ); ?></p>
@@ -264,6 +269,33 @@ if (!class_exists('SFWP_Settings')) {
             <?php
         }
 
+        function api_status_render() {
+            $this->api_status_html();
+        }
+
+        function api_url_render() {
+
+            $api_url = ( ! empty( $this->options['api_url'] ) ) ? esc_attr( trim( $this->options['api_url'] ) ) : '';
+
+            ?>
+            <input type='text' name='sfwp_settings[api_url]' id="sfwp_api_url" placeholder="https://my-domain.com/sendy"
+                   value='<?php echo esc_attr( trim( $api_url ) ); ?>' style="width: 350px;"><br />
+            <small><?php _e( 'Please enter the url of your Sendy installation (without trailing slash).', 'wp-sendy' ); ?></small>
+            <?php
+        }
+
+        function api_key_render() {
+
+            $api_key = ( ! empty( $this->options['api_key'] ) ) ? esc_attr( trim( $this->options['api_key'] ) ) : '';
+
+            ?>
+            <input type='text' name='sfwp_settings[api_key]' id="sfwp_api_key"
+                   value='<?php echo esc_attr( trim( $api_key ) ); ?>' style="width: 350px;">
+            <?php
+        }
+
+
+        /*
         function api_client_render() {
 
             $api_client_id = ( !empty($this->options['api_client_id'] ) ) ? esc_attr( trim( $this->options['api_client_id'] ) ) : '';
@@ -350,7 +382,7 @@ if (!class_exists('SFWP_Settings')) {
 
             <br />
 
-            <p><?php printf( esc_html__( 'Available templates (%1$s) can be used to overwrite each shortcode individually: e.g.', 'wp-sendy' ), 'standard, grid, list' ); ?> <code>[ufwp id="1234,6789" template="list"]</code></p>
+            <p><?php printf( esc_html__( 'Available templates (%1$s) can be used to overwrite each shortcode individually: e.g.', 'wp-sendy' ), 'standard, grid, list' ); ?> <code>[sfwp id="1234,6789" template="list"]</code></p>
             <p></p>
             <?php
         }
@@ -381,7 +413,7 @@ if (!class_exists('SFWP_Settings')) {
         }
 
         function custom_css_render() {
-            
+
             $custom_css_activated = ( isset ( $this->options['custom_css_activated'] ) && $this->options['custom_css_activated'] == '1' ) ? 1 : 0;
             $custom_css = ( !empty ( $this->options['custom_css'] ) ) ? $this->options['custom_css'] : '';
             ?>
@@ -393,7 +425,7 @@ if (!class_exists('SFWP_Settings')) {
             <br />
             <textarea id="sfwp_custom_css" name="sfwp_settings[custom_css]" rows="10" cols="80" style="width: 100%;"><?php echo stripslashes($custom_css); ?></textarea>
             <p>
-                <small><?php _e("Please don't use the <code>style</code> tag. Simply paste you CSS classes/definitions e.g. <code>.ufwp .ufwp-course { background-color: #333; color: #fff; }</code>", 'wp-sendy' ) ?></small>
+                <small><?php _e("Please don't use the <code>style</code> tag. Simply paste you CSS classes/definitions e.g. <code>.sfwp .sfwp-course { background-color: #333; color: #fff; }</code>", 'wp-sendy' ) ?></small>
             </p>
 
             <?php
@@ -438,7 +470,7 @@ if (!class_exists('SFWP_Settings')) {
 
             ?>
 
-            <table class="widefat ufwp-settings-table">
+            <table class="widefat sfwp-settings-table">
                 <thead>
                     <tr>
                         <th width="300"><?php _e('Setting', 'wp-sendy'); ?></th>
@@ -492,19 +524,20 @@ if (!class_exists('SFWP_Settings')) {
             </p>
             <p>
                 <input type="hidden" id="sfwp_reset_log" name="sfwp_settings[reset_log]" value="0" />
-                <?php submit_button( 'Reset log', 'delete button-secondary', 'ufwp-reset-log-submit', false ); ?>
+                <?php submit_button( 'Reset log', 'delete button-secondary', 'sfwp-reset-log-submit', false ); ?>
             </p>
             <?php
         }
+        */
 
         function options_page()
         {
             ?>
 
-            <div class="ufwp-settings">
+            <div class="sfwp sfwp-settings">
                 <div class="wrap">
                     <?php screen_icon(); ?>
-                    <h2><?php _e('Online Learning Courses', 'wp-sendy'); ?></h2>
+                    <h2><?php _e('Settings', 'wp-sendy'); ?></h2>
 
                     <div id="poststuff">
                         <div id="post-body" class="metabox-holder columns-2">
@@ -519,8 +552,6 @@ if (!class_exists('SFWP_Settings')) {
 
                                         <p>
                                             <?php submit_button( 'Save Changes', 'button-primary', 'submit', false ); ?>
-                                            &nbsp;
-                                            <?php submit_button( 'Delete cache', 'delete button-secondary', 'ufwp-delete-cache-submit', false ); ?>
                                         </p>
 
                                     </form>
@@ -548,10 +579,10 @@ if (!class_exists('SFWP_Settings')) {
                                             <p><?php _e('Do you want to <strong>earn money</strong> with course sales? The PRO version extends the plugin exclusively with our affiliate links feature.', 'wp-sendy'); ?></p>
 
                                             <ul>
-                                                <li><span class="dashicons dashicons-star-filled ufwp-settings-star"></span> <strong><?php _e('Affiliate Links', 'wp-sendy'); ?></strong></li>
-                                                <li><span class="dashicons dashicons-star-filled ufwp-settings-star"></span> <strong><?php _e('Masked Links', 'wp-sendy'); ?></strong></li>
-                                                <li><span class="dashicons dashicons-star-filled ufwp-settings-star"></span> <strong><?php _e('Click Tracking', 'wp-sendy'); ?></strong></li>
-                                                <li><span class="dashicons dashicons-star-filled ufwp-settings-star"></span> <strong><?php _e('Custom Templates', 'wp-sendy'); ?></strong></li>
+                                                <li><span class="dashicons dashicons-star-filled sfwp-settings-star"></span> <strong><?php _e('Affiliate Links', 'wp-sendy'); ?></strong></li>
+                                                <li><span class="dashicons dashicons-star-filled sfwp-settings-star"></span> <strong><?php _e('Masked Links', 'wp-sendy'); ?></strong></li>
+                                                <li><span class="dashicons dashicons-star-filled sfwp-settings-star"></span> <strong><?php _e('Click Tracking', 'wp-sendy'); ?></strong></li>
+                                                <li><span class="dashicons dashicons-star-filled sfwp-settings-star"></span> <strong><?php _e('Custom Templates', 'wp-sendy'); ?></strong></li>
                                             </ul>
 
                                             <p>
@@ -567,7 +598,7 @@ if (!class_exists('SFWP_Settings')) {
                                                     ), 'https://coder.flowdee.de/downloads/wp-sendy-pro/' )
                                                 );
                                                 ?>
-                                                <a class="ufwp-settings-button ufwp-settings-button--block" target="_blank" href="<?php echo $upgrade_link; ?>" rel="nofollow"><?php _e('More details', 'wp-sendy'); ?></a>
+                                                <a class="sfwp-settings-button sfwp-settings-button--block" target="_blank" href="<?php echo $upgrade_link; ?>" rel="nofollow"><?php _e('More details', 'wp-sendy'); ?></a>
                                             </p>
                                         </div>
                                     </div>
@@ -586,16 +617,23 @@ if (!class_exists('SFWP_Settings')) {
         /*
          * API Status field
          */
-        function api_status_render() {
+        function api_status_html() {
 
             $status = ( ! empty ( $this->options['api_status'] ) ) ? true : false;
             $error = ( ! empty ( $this->options['api_error'] ) ) ? $this->options['api_error'] : '';
 
             $message = ( $status ) ? __( 'Connected', 'wp-sendy' ) : __( 'Disconnected', 'wp-sendy' );
-            $color = ( $status ) ? 'darkgreen' : 'darkred';
+
+            if ( $status ) {
+                $bgcolor = 'darkgreen';
+            } elseif ( ! $status && ! empty( $error ) ) {
+                $bgcolor = 'darkred';
+            } else {
+                $bgcolor = 'gray';
+            }
 
             ?>
-            <span style="color: <?php echo $color; ?>; font-weight: bold;"><?php echo ( ! empty ( $error ) ) ? $error : $message; ?></span>
+            <span style="display: inline-block; padding: 3px 6px; font-size: 12px; text-transform: uppercase; background-color: <?php echo $bgcolor; ?>; color: #fff; font-weight: 600;"><?php echo ( ! empty ( $error ) ) ? $error : $message; ?></span>
             <?php
         }
 
@@ -619,41 +657,3 @@ if (!class_exists('SFWP_Settings')) {
 }
 
 new SFWP_Settings();
-
-/*
- * Custom settings section output
- *
- * Replacing: do_settings_sections('wp-sendy');
- */
-function sfwp_do_settings_sections( $page ) {
-
-    global $wp_settings_sections, $wp_settings_fields;
-
-    if (!isset($wp_settings_sections[$page]))
-        return;
-
-    foreach ((array)$wp_settings_sections[$page] as $section) {
-
-        $title = '';
-
-        if ($section['title'])
-            $title = "<h3 class='hndle'>{$section['title']}</h3>\n";
-
-        if ($section['callback'])
-            call_user_func($section['callback'], $section);
-
-        if (!isset($wp_settings_fields) || !isset($wp_settings_fields[$page]) || !isset($wp_settings_fields[$page][$section['id']]))
-            continue;
-
-        echo '<div class="postbox">';
-        echo $title;
-        echo '<div class="inside">';
-        echo '<table class="form-table">';
-        do_settings_fields($page, $section['id']);
-        echo '</table>';
-        echo '</div>';
-        echo '</div>';
-    }
-}
-
-?>

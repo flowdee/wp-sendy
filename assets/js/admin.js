@@ -1,7 +1,21 @@
-jQuery( document ).on( 'click', '#ufwp-delete-cache-submit', function(event) {
-    jQuery('#ufwp_delete_cache').val('1');
+jQuery(document).ready(function ($) {
+
+    jQuery( document ).on( 'click', '[data-sfwp-add-list]', function(e) {
+
+        var currentContainer = $(this).parent('[data-sfwp-list-container]');
+        var nextContainer = currentContainer.next('[data-sfwp-list-container]');
+
+        nextContainer.addClass('sfwp-lists__item--active');
+    });
+
+    jQuery( document ).on( 'click', '[data-sfwp-remove-list]', function(e) {
+
+        var currentContainer = $(this).parent('[data-sfwp-list-container]');
+        var currentInput = currentContainer.find('input');
+
+        currentInput.val('');
+        currentContainer.removeClass('sfwp-lists__item--active');
+    });
+
 });
 
-jQuery( document ).on( 'click', '#ufwp-reset-log-submit', function(event) {
-    jQuery('#ufwp_reset_log').val('1');
-});

@@ -68,5 +68,22 @@ function sfwp_add_shortcode( $atts ) {
 
     return $output;
 }
-add_shortcode( 'ufwp', 'sfwp_add_shortcode' );
+add_shortcode( 'wp-sendy', 'sfwp_add_shortcode' );
 add_shortcode( 'udemy', 'sfwp_add_shortcode' );
+
+
+/**
+ * Debugging
+ */
+add_shortcode( 'sendy_debug', function() {
+
+    ob_start();
+
+    $validation = sfwp_validate_api_credentials( 'https://mailing.kwindo.de', 'CCVOon4Uz8BSasz2XACd' );
+
+    var_dump($validation);
+
+    $str = ob_get_clean();
+
+    return $str;
+});

@@ -83,15 +83,22 @@ if( !class_exists( 'SFWP' ) ) {
             require_once SFWP_DIR . 'includes/helper.php';
 
             if ( is_admin() ) {
+                require_once SFWP_DIR . 'includes/admin/functions.php';
+                require_once SFWP_DIR . 'includes/admin/pages.php';
                 require_once SFWP_DIR . 'includes/admin/plugins.php';
+                require_once SFWP_DIR . 'includes/admin/class.integrations.php';
                 require_once SFWP_DIR . 'includes/admin/class.settings.php';
             }
 
+            require_once SFWP_DIR . 'includes/class.integration.php';
+            require_once SFWP_DIR . 'includes/class.sendy.php';
             require_once SFWP_DIR . 'includes/scripts.php';
-            //require_once SFWP_DIR . 'includes/functions.php';
-            //require_once SFWP_DIR . 'includes/shortcodes.php';
+            require_once SFWP_DIR . 'includes/functions.php';
+            require_once SFWP_DIR . 'includes/shortcodes.php';
             //require_once SFWP_DIR . 'includes/widgets.php';
             //require_once SFWP_DIR . 'includes/hooks.php';
+
+            require_once SFWP_DIR . 'includes/integrations/bootstrap.php';
         }
 
         /**
